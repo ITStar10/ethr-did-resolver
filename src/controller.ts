@@ -60,6 +60,8 @@ export class EthrDidController {
   }
 
   async attachContract(controller?: address | Promise<address>): Promise<Contract> {
+    // console.log('controller: ', controller)
+    // console.log('signer: ', this.signer)
     const currentOwner = controller ? await controller : await this.getOwner(this.address, 'latest')
     const signer = this.signer
       ? this.signer
@@ -70,15 +72,18 @@ export class EthrDidController {
   async changeOwner(newOwner: address, options: CallOverrides = {}): Promise<TransactionReceipt> {
     // console.log(`changing owner for ${oldOwner} on registry at ${registryContract.address}`)
     const overrides = {
-      gasLimit: 123456,
-      gasPrice: 1000000000,
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
       ...options,
     }
 
     const contract = await this.attachContract(overrides.from)
     delete overrides.from
 
+    console.log('override: ', overrides)
+
     const ownerChange = await contract.functions.changeOwner(this.address, newOwner, overrides)
+
     return await ownerChange.wait()
   }
 
@@ -89,8 +94,8 @@ export class EthrDidController {
     options: CallOverrides = {}
   ): Promise<TransactionReceipt> {
     const overrides = {
-      gasLimit: 123456,
-      gasPrice: 1000000000,
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
       ...options,
     }
     const contract = await this.attachContract(overrides.from)
@@ -114,8 +119,8 @@ export class EthrDidController {
     options: CallOverrides = {}
   ): Promise<TransactionReceipt> {
     const overrides = {
-      gasLimit: 123456,
-      gasPrice: 1000000000,
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
       ...options,
     }
     delegateType = delegateType.startsWith('0x') ? delegateType : stringToBytes32(delegateType)
@@ -137,24 +142,27 @@ export class EthrDidController {
     options: CallOverrides = {}
   ): Promise<TransactionReceipt> {
     const overrides = {
-      gasLimit: 123456,
-      gasPrice: 1000000000,
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
       controller: undefined,
       ...options,
     }
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
     attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
+    // console.log('ethr-did -> controller.ts : ', 1)
     const contract = await this.attachContract(overrides.from)
+    // console.log('ethr-did -> controller.ts : ', 2, contract)
     delete overrides.from
     const setAttrTx = await contract.functions.setAttribute(this.address, attrName, attrValue, exp, overrides)
+    // console.log('ethr-did -> controller.ts : ', 3, setAttrTx)
     return await setAttrTx.wait()
   }
 
   async revokeAttribute(attrName: string, attrValue: string, options: CallOverrides = {}): Promise<TransactionReceipt> {
     // console.log(`revoking attribute ${attrName}(${attrValue}) for ${identity}`)
     const overrides = {
-      gasLimit: 123456,
-      gasPrice: 1000000000,
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
       ...options,
     }
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
