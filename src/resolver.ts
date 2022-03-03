@@ -223,11 +223,20 @@ export class EthrDidResolver {
                 break
               }
               case 'svc':
+                // eslint-disable-next-line no-case-declarations
+                const value = Buffer.from(currentEvent.value.slice(2), 'hex').toString()
+                // eslint-disable-next-line no-case-declarations
+                const valueMatch = value.match(/(.*)##(\w+)##(\w+)/)
+
+                console.log('Resolver : parsing svc', value)
+
                 serviceCount++
                 services[eventIndex] = {
-                  id: `${did}#service-${serviceCount}`,
+                  // id: `${did}#service-${serviceCount}`,
+                  id: `${did}?context=${valueMatch?.[2]}#${valueMatch?.[3]}`,
                   type: algorithm,
-                  serviceEndpoint: Buffer.from(currentEvent.value.slice(2), 'hex').toString(),
+                  // serviceEndpoint: Buffer.from(currentEvent.value.slice(2), 'hex').toString(),
+                  serviceEndpoint: valueMatch?.[1] ?? '',
                 }
                 break
             }

@@ -147,8 +147,13 @@ export class EthrDidController {
       controller: undefined,
       ...options,
     }
+    console.log('resolver: setAttribute : name = ', attrName)
+
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
     attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
+
+    console.log('resolver: setAttribute : name = ', attrName)
+
     // console.log('ethr-did -> controller.ts : ', 1)
     const contract = await this.attachContract(overrides.from)
     // console.log('ethr-did -> controller.ts : ', 2, contract)
