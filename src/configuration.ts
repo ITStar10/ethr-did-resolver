@@ -65,6 +65,7 @@ export function getContractForNetwork(conf: ProviderConfiguration): Contract {
       throw new Error(`invalid_config: No web3 provider could be determined for network ${conf.name || conf.chainId}`)
     }
   }
+  console.log('resolver:getContractForNetwork(): ', conf.registry)
   const contract: Contract = ContractFactory.fromSolidity(DidRegistryContract)
     .attach(conf.registry || DEFAULT_REGISTRY_ADDRESS)
     .connect(provider)

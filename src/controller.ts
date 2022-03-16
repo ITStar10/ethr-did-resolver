@@ -1,4 +1,5 @@
 import { Signer } from '@ethersproject/abstract-signer'
+import { isAddress } from '@ethersproject/address'
 import { CallOverrides, Contract } from '@ethersproject/contracts'
 import { BlockTag, JsonRpcProvider, Provider, TransactionReceipt } from '@ethersproject/providers'
 import { getContractForNetwork } from './configuration'
@@ -33,15 +34,19 @@ export class EthrDidController {
     rpcUrl?: string,
     registry: string = DEFAULT_REGISTRY_ADDRESS
   ) {
+    console.log('EthrDidController - Registry: ', registry)
     // initialize identifier
     const { address, publicKey, network } = interpretIdentifier(identifier)
     const net = network || chainNameOrId
     // initialize contract connection
     if (contract) {
+      console.log('Contract from InputParameter')
       this.contract = contract
     } else if (provider || signer?.provider || rpcUrl) {
+      console.log('Contract from getContractForNetwork()')
       const prov = provider || signer?.provider
       this.contract = getContractForNetwork({ name: net, provider: prov, registry, rpcUrl })
+      console.log('Contract Functions:', this.contract.functions)
     } else {
       throw new Error(' either a contract instance or a provider or rpcUrl is required to initialize')
     }
@@ -135,6 +140,44 @@ export class EthrDidController {
     return await addDelegateTx.wait()
   }
 
+  async bulkAdd(
+    delegateParams: { delegateType: string; delegateAddress: address; exp: number }[],
+    attributeParams: { attrName: string; attrValue: string; exp: number }[],
+    options: CallOverrides = {}
+  ): Promise<TransactionReceipt> {
+    const overrides = {
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
+      ...options,
+    }
+    const contract = await this.attachContract(overrides.from)
+    delete overrides.from
+
+    const dParams = delegateParams.map((item) => {
+      return {
+        delegateType: stringToBytes32(item.delegateType),
+        delegate: item.delegateAddress,
+        validity: item.exp,
+      }
+    })
+
+    const aParams = attributeParams.map((item) => {
+      const attrName = item.attrName.startsWith('0x') ? item.attrName : stringToBytes32(item.attrName)
+      const attrValue = item.attrValue.startsWith('0x')
+        ? item.attrValue
+        : '0x' + Buffer.from(item.attrValue, 'utf-8').toString('hex')
+      return {
+        name: attrName,
+        value: attrValue,
+        validity: item.exp,
+      }
+    })
+
+    const bulkAddTx = await contract.functions.bulkAdd(this.address, dParams, aParams, overrides)
+    bulkAddTx
+    return await bulkAddTx.wait()
+  }
+
   async setAttribute(
     attrName: string,
     attrValue: string,
@@ -147,12 +190,8 @@ export class EthrDidController {
       controller: undefined,
       ...options,
     }
-    console.log('resolver: setAttribute : name = ', attrName)
-
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
     attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
-
-    console.log('resolver: setAttribute : name = ', attrName)
 
     // console.log('ethr-did -> controller.ts : ', 1)
     const contract = await this.attachContract(overrides.from)

@@ -93,7 +93,6 @@
     "@ethersproject/contracts": "^5.5.0",
     "@ethersproject/providers": "^5.5.0",
     "@ethersproject/transactions": "^5.5.0",
-    "did-resolver": "^3.1.5",
-    "ethr-did-registry": "^0.0.3"
+    "did-resolver": "^3.1.5"
   }
 }
