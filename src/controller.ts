@@ -1,5 +1,6 @@
 import { Signer } from '@ethersproject/abstract-signer'
 import { isAddress } from '@ethersproject/address'
+import { BigNumber } from '@ethersproject/bignumber'
 import { CallOverrides, Contract } from '@ethersproject/contracts'
 import { BlockTag, JsonRpcProvider, Provider, TransactionReceipt } from '@ethersproject/providers'
 import { getContractForNetwork } from './configuration'
@@ -140,7 +141,98 @@ export class EthrDidController {
     return await addDelegateTx.wait()
   }
 
+  async nonce(signer: address, options: CallOverrides = {}): Promise<BigNumber> {
+    const overrides = {
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
+      ...options,
+    }
+    const contract = await this.attachContract(overrides.from)
+    delete overrides.from
+    const nonceTx = (await contract.functions.nonce(signer)) as BigNumber
+    console.log('Controller: nonce = ', nonceTx)
+    return nonceTx
+  }
+
   async bulkAdd(
+    delegateParams: { delegateType: string; delegate: address; validity: number }[],
+    attributeParams: { name: string; value: string; validity: number }[],
+    signedDelegateParams: {
+      identity: address
+      sigV: number
+      sigR: string
+      sigS: string
+      delegateType: string
+      delegate: address
+      validity: number
+    }[],
+    signedAttributeParams: {
+      identity: address
+      sigV: number
+      sigR: string
+      sigS: string
+      name: string
+      value: Uint8Array | string
+      validity: number
+    }[],
+    options: CallOverrides = {}
+  ): Promise<TransactionReceipt> {
+    const overrides = {
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
+      ...options,
+    }
+    const contract = await this.attachContract(overrides.from)
+    delete overrides.from
+
+    const dParams = delegateParams.map((item) => {
+      return {
+        ...item,
+        delegateType: stringToBytes32(item.delegateType),
+      }
+    })
+
+    const aParams = attributeParams.map((item) => {
+      const attrName = item.name.startsWith('0x') ? item.name : stringToBytes32(item.name)
+      const attrValue = item.value.startsWith('0x')
+        ? item.value
+        : '0x' + Buffer.from(item.value, 'utf-8').toString('hex')
+      return {
+        name: attrName,
+        value: attrValue,
+        validity: item.validity,
+      }
+    })
+
+    /*
+    const dParamSigned = signedDelegateParams.map((item) => {
+      return {
+        ...item,
+        // delegateType: stringToBytes32(item.delegateType),
+      }
+    })
+
+    const aParamSigned = signedAttributeParams.map((item) => {
+      // const attrName = item.name.startsWith('0x') ? item.name : stringToBytes32(item.name)
+      // const attrValue = item.value.startsWith('0x')
+      //   ? item.value
+      //   : '0x' + Buffer.from(item.value, 'utf-8').toString('hex')
+      return {
+        ...item,
+        // name: attrName,
+        // value: attrValue,
+      }
+    })
+    */
+
+    console.log('Controller calling SignedD:', signedDelegateParams)
+
+    const bulkAddTx = await contract.functions.bulkAdd(this.address, dParams, [], [], [], overrides)
+    bulkAddTx
+    return await bulkAddTx.wait()
+  }
+
+  async _bulkAdd(
     delegateParams: { delegateType: string; delegateAddress: address; exp: number }[],
     attributeParams: { attrName: string; attrValue: string; exp: number }[],
     options: CallOverrides = {}
