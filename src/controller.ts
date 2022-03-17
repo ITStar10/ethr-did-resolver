@@ -1,5 +1,5 @@
 import { Signer } from '@ethersproject/abstract-signer'
-import { isAddress } from '@ethersproject/address'
+// import { isAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { CallOverrides, Contract } from '@ethersproject/contracts'
 import { BlockTag, JsonRpcProvider, Provider, TransactionReceipt } from '@ethersproject/providers'
@@ -41,13 +41,13 @@ export class EthrDidController {
     const net = network || chainNameOrId
     // initialize contract connection
     if (contract) {
-      console.log('Contract from InputParameter')
+      // console.log('Contract from InputParameter')
       this.contract = contract
     } else if (provider || signer?.provider || rpcUrl) {
-      console.log('Contract from getContractForNetwork()')
+      // console.log('Contract from getContractForNetwork()')
       const prov = provider || signer?.provider
       this.contract = getContractForNetwork({ name: net, provider: prov, registry, rpcUrl })
-      console.log('Contract Functions:', this.contract.functions)
+      // console.log('Contract Functions:', this.contract.functions)
     } else {
       throw new Error(' either a contract instance or a provider or rpcUrl is required to initialize')
     }
@@ -204,7 +204,6 @@ export class EthrDidController {
       }
     })
 
-    /*
     const dParamSigned = signedDelegateParams.map((item) => {
       return {
         ...item,
@@ -223,15 +222,26 @@ export class EthrDidController {
         // value: attrValue,
       }
     })
-    */
 
-    console.log('Controller calling SignedD:', signedDelegateParams)
+    console.log('Controller Identity:', this.address)
+    console.log('Controller dParams:', dParams)
+    console.log('Controller aParams:', aParams)
+    console.log('Controller signedDParams:', dParamSigned)
+    console.log('Controller signedAParams:', aParamSigned)
 
-    const bulkAddTx = await contract.functions.bulkAdd(this.address, dParams, [], [], [], overrides)
+    const bulkAddTx = await contract.functions.bulkAdd(
+      this.address,
+      dParams,
+      aParams,
+      dParamSigned,
+      aParamSigned,
+      overrides
+    )
     bulkAddTx
     return await bulkAddTx.wait()
   }
 
+  /*
   async _bulkAdd(
     delegateParams: { delegateType: string; delegateAddress: address; exp: number }[],
     attributeParams: { attrName: string; attrValue: string; exp: number }[],
@@ -269,6 +279,7 @@ export class EthrDidController {
     bulkAddTx
     return await bulkAddTx.wait()
   }
+  */
 
   async setAttribute(
     attrName: string,
