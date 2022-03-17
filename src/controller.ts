@@ -204,37 +204,18 @@ export class EthrDidController {
       }
     })
 
-    const dParamSigned = signedDelegateParams.map((item) => {
-      return {
-        ...item,
-        // delegateType: stringToBytes32(item.delegateType),
-      }
-    })
-
-    const aParamSigned = signedAttributeParams.map((item) => {
-      // const attrName = item.name.startsWith('0x') ? item.name : stringToBytes32(item.name)
-      // const attrValue = item.value.startsWith('0x')
-      //   ? item.value
-      //   : '0x' + Buffer.from(item.value, 'utf-8').toString('hex')
-      return {
-        ...item,
-        // name: attrName,
-        // value: attrValue,
-      }
-    })
-
     console.log('Controller Identity:', this.address)
     console.log('Controller dParams:', dParams)
     console.log('Controller aParams:', aParams)
-    console.log('Controller signedDParams:', dParamSigned)
-    console.log('Controller signedAParams:', aParamSigned)
+    console.log('Controller signedDParams:', signedDelegateParams)
+    console.log('Controller signedAParams:', signedAttributeParams)
 
     const bulkAddTx = await contract.functions.bulkAdd(
       this.address,
       dParams,
       aParams,
-      dParamSigned,
-      aParamSigned,
+      signedDelegateParams,
+      signedAttributeParams,
       overrides
     )
     bulkAddTx
