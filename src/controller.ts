@@ -222,6 +222,65 @@ export class EthrDidController {
     return await bulkAddTx.wait()
   }
 
+  async bulkRevoke(
+    delegateParams: { delegateType: string; delegate: address }[],
+    attributeParams: { name: string; value: string }[],
+    signedDelegateParams: {
+      identity: address
+      sigV: number
+      sigR: string
+      sigS: string
+      delegateType: string
+      delegate: address
+    }[],
+    signedAttributeParams: {
+      identity: address
+      sigV: number
+      sigR: string
+      sigS: string
+      name: string
+      value: Uint8Array | string
+    }[],
+    options: CallOverrides = {}
+  ): Promise<TransactionReceipt> {
+    const overrides = {
+      gasLimit: 10000000,
+      gasPrice: 50000000000,
+      ...options,
+    }
+    const contract = await this.attachContract(overrides.from)
+    delete overrides.from
+
+    const dParams = delegateParams.map((item) => {
+      return {
+        ...item,
+        delegateType: item.delegateType.startsWith('0x') ? item.delegateType : stringToBytes32(item.delegateType),
+      }
+    })
+
+    const aParams = attributeParams.map((item) => {
+      const attrName = item.name.startsWith('0x') ? item.name : stringToBytes32(item.name)
+      const attrValue = item.value.startsWith('0x')
+        ? item.value
+        : '0x' + Buffer.from(item.value, 'utf-8').toString('hex')
+      return {
+        name: attrName,
+        value: attrValue,
+      }
+    })
+
+    const bulkRevokeTx = await contract.functions.bulkRevoke(
+      this.address,
+      dParams,
+      aParams,
+      signedDelegateParams,
+      signedAttributeParams,
+      overrides
+    )
+    bulkRevokeTx
+    return await bulkRevokeTx.wait()
+  }
+
   /*
   async _bulkAdd(
     delegateParams: { delegateType: string; delegateAddress: address; exp: number }[],
