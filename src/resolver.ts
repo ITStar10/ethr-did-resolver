@@ -228,7 +228,7 @@ export class EthrDidResolver {
                 // eslint-disable-next-line no-case-declarations
                 const valueMatch = value.match(/(.*)##(\w+)##(\w+)/)
 
-                console.log('Resolver : parsing svc', value)
+                // console.log('Resolver : parsing svc', value)
 
                 serviceCount++
                 services[eventIndex] = {

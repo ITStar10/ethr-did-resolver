@@ -35,7 +35,7 @@ export class EthrDidController {
     rpcUrl?: string,
     registry: string = DEFAULT_REGISTRY_ADDRESS
   ) {
-    console.log('EthrDidController - Registry: ', registry)
+    // console.log('EthrDidController - Registry: ', registry)
     // initialize identifier
     const { address, publicKey, network } = interpretIdentifier(identifier)
     const net = network || chainNameOrId
@@ -86,7 +86,7 @@ export class EthrDidController {
     const contract = await this.attachContract(overrides.from)
     delete overrides.from
 
-    console.log('override: ', overrides)
+    // console.log('override: ', overrides)
 
     const ownerChange = await contract.functions.changeOwner(this.address, newOwner, overrides)
 
@@ -150,7 +150,7 @@ export class EthrDidController {
     const contract = await this.attachContract(overrides.from)
     delete overrides.from
     const nonceTx = (await contract.functions.nonce(signer)) as BigNumber
-    console.log('Controller: nonce = ', nonceTx)
+    // console.log('Controller: nonce = ', nonceTx)
     return nonceTx
   }
 
@@ -204,11 +204,11 @@ export class EthrDidController {
       }
     })
 
-    console.log('Controller Identity:', this.address)
-    console.log('Controller dParams:', dParams)
-    console.log('Controller aParams:', aParams)
-    console.log('Controller signedDParams:', signedDelegateParams)
-    console.log('Controller signedAParams:', signedAttributeParams)
+    // console.log('Controller Identity:', this.address)
+    // console.log('Controller dParams:', dParams)
+    // console.log('Controller aParams:', aParams)
+    // console.log('Controller signedDParams:', signedDelegateParams)
+    // console.log('Controller signedAParams:', signedAttributeParams)
 
     const bulkAddTx = await contract.functions.bulkAdd(
       this.address,
