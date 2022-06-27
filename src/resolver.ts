@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { Base58 } from '@ethersproject/basex'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Block, BlockTag } from '@ethersproject/providers'
-import { ConfigurationOptions, ConfiguredNetworks, configureResolverWithNetworks } from './configuration'
-import { EthrDidController } from './controller'
+// import { ConfigurationOptions, ConfiguredNetworks, configureResolverWithNetworks } from './configuration'
+import { CallType, ContractInfo, VeridaSelfTransactionConfig, VeridaMetaTransactionConfig } from '@verida/web3'
+import { VeridaContractInstance, VeridaContract } from '@verida/web3'
+
 import {
   DIDDocument,
   DIDResolutionOptions,
@@ -26,21 +29,54 @@ import {
   identifierMatcher,
   nullAddress,
   DIDOwnerChanged,
-  knownNetworks,
   Errors,
   strip0x,
 } from './helpers'
 import { logDecoder } from './logParser'
 
-export function getResolver(options: ConfigurationOptions): Record<string, DIDResolver> {
-  return new EthrDidResolver(options).build()
+const Web3 = require('web3')
+const Web3HttpProvider = require('web3-providers-http')
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('dotenv').config()
+
+// Read contract info from env
+const abi = require('./contract/abi.json')
+const currentNet = process.env.RPC_TARGET_NET != undefined ? process.env.RPC_TARGET_NET : 'RPC_URL_POLYGON_MAINNET'
+const address = process.env[`CONTRACT_ADDRESS_${currentNet}_DidRegistry`]
+if (!address) {
+  throw new Error('Contract address not defined in env')
+}
+const contractInfo: ContractInfo = {
+  abi: abi,
+  address: address!,
 }
 
-export class EthrDidResolver {
-  private contracts: ConfiguredNetworks
+const rpcURL = eval(`process.env.${currentNet}`)
+const web3 = new Web3(rpcURL)
+const web3Provider = new Web3HttpProvider(rpcURL)
+const contract = new web3.eth.Contract(abi, address)
 
-  constructor(options: ConfigurationOptions) {
-    this.contracts = configureResolverWithNetworks(options)
+type Configuration = VeridaMetaTransactionConfig | VeridaSelfTransactionConfig
+
+export function getResolver(type: CallType, options: Configuration): Record<string, DIDResolver> {
+  return new VdaDidResolver(type, options).build()
+}
+
+export class VdaDidResolver {
+  private type: CallType
+  private options: Configuration
+
+  private didContract: VeridaContract
+
+  constructor(type: CallType, options: Configuration) {
+    this.type = type
+    this.options = options
+
+    this.didContract = VeridaContractInstance(type, {
+      ...contractInfo,
+      ...options,
+    })
   }
 
   /**
@@ -48,9 +84,9 @@ export class EthrDidResolver {
    *
    * @param address
    */
-  async getOwner(address: string, networkId: string, blockTag?: BlockTag): Promise<string> {
+  async getOwner(address: string): Promise<string> {
     //TODO: check if address or public key
-    return new EthrDidController(address, this.contracts[networkId]).getOwner(address, blockTag)
+    return this.didContract.identityOwner(address)
   }
 
   /**
@@ -58,14 +94,18 @@ export class EthrDidResolver {
    *
    * @param address
    */
-  async previousChange(address: string, networkId: string, blockTag?: BlockTag): Promise<BigNumber> {
-    const result = await this.contracts[networkId].functions.changed(address, { blockTag })
+  async previousChange(address: string): Promise<BigNumber> {
+    // const result = await this.contracts[networkId].functions.changed(address, { blockTag })
+    const result = await this.didContract.changed(address)
+
     // console.log(`last change result: '${BigNumber.from(result['0'])}'`)
     return BigNumber.from(result['0'])
   }
 
-  async getBlockMetadata(blockHeight: number, networkId: string): Promise<{ height: string; isoDate: string }> {
-    const block: Block = await this.contracts[networkId].provider.getBlock(blockHeight)
+  async getBlockMetadata(blockHeight: number): Promise<{ height: string; isoDate: string }> {
+    // const block: Block = await this.contracts[networkId].provider.getBlock(blockHeight)
+    const block: Block = await web3Provider.getBlock(blockHeight)
+
     return {
       height: block.number.toString(),
       isoDate: new Date(block.timestamp * 1000).toISOString().replace('.000', ''),
@@ -74,25 +114,22 @@ export class EthrDidResolver {
 
   async changeLog(
     identity: string,
-    networkId: string,
     blockTag: BlockTag = 'latest'
   ): Promise<{ address: string; history: ERC1056Event[]; controllerKey?: string; chainId: number }> {
-    const contract = this.contracts[networkId]
-    const provider = contract.provider
-    const hexChainId = networkId.startsWith('0x') ? networkId : knownNetworks[networkId]
-    //TODO: this can be used to check if the configuration is ok
-    const chainId = hexChainId ? BigNumber.from(hexChainId).toNumber() : (await provider.getNetwork()).chainId
+    const provider = web3Provider
+    const chainId = await provider.getNetwork().chainId
+
     const history: ERC1056Event[] = []
     const { address, publicKey } = interpretIdentifier(identity)
     const controllerKey = publicKey
-    let previousChange: BigNumber | null = await this.previousChange(address, networkId, blockTag)
+    let previousChange: BigNumber | null = await this.previousChange(address)
     while (previousChange) {
       const blockNumber = previousChange
       // console.log(`gigel ${previousChange}`)
       const fromBlock =
         previousChange.toHexString() !== '0x00' ? previousChange.sub(1).toHexString() : previousChange.toHexString()
       const logs = await provider.getLogs({
-        address: contract.address, // networks[networkId].registryAddress,
+        address: address, // networks[networkId].registryAddress,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         topics: [null as any, `0x000000000000000000000000${address.slice(2)}`],
         fromBlock,
@@ -342,27 +379,16 @@ export class EthrDidResolver {
       }
     }
 
-    if (!this.contracts[networkId]) {
-      return {
-        didResolutionMetadata: {
-          error: Errors.unknownNetwork,
-          message: `The DID resolver does not have a configuration for network: ${networkId}`,
-        },
-        didDocumentMetadata: {},
-        didDocument: null,
-      }
-    }
-
     let now = BigNumber.from(Math.floor(new Date().getTime() / 1000))
 
     if (typeof blockTag === 'number') {
-      const block = await this.getBlockMetadata(blockTag, networkId)
+      const block = await this.getBlockMetadata(blockTag)
       now = BigNumber.from(Date.parse(block.isoDate) / 1000)
     } else {
       // 'latest'
     }
 
-    const { address, history, controllerKey, chainId } = await this.changeLog(id, networkId, 'latest')
+    const { address, history, controllerKey, chainId } = await this.changeLog(id, 'latest')
     try {
       const { didDocument, deactivated, versionId, nextVersionId } = this.wrapDidDocument(
         did,
@@ -377,14 +403,14 @@ export class EthrDidResolver {
       let versionMeta = {}
       let versionMetaNext = {}
       if (versionId !== 0) {
-        const block = await this.getBlockMetadata(versionId, networkId)
+        const block = await this.getBlockMetadata(versionId)
         versionMeta = {
           versionId: block.height,
           updated: block.isoDate,
         }
       }
       if (nextVersionId !== Number.POSITIVE_INFINITY) {
-        const block = await this.getBlockMetadata(nextVersionId, networkId)
+        const block = await this.getBlockMetadata(nextVersionId)
         versionMetaNext = {
           nextVersionId: block.height,
           nextUpdate: block.isoDate,

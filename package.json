@@ -93,6 +93,8 @@
     "@ethersproject/contracts": "^5.5.0",
     "@ethersproject/providers": "^5.5.0",
     "@ethersproject/transactions": "^5.5.0",
-    "did-resolver": "^3.1.5"
+    "did-resolver": "^3.1.5",
+    "web3": "^1.7.4",
+    "web3-providers-http": "^1.7.4"
   }
 }
