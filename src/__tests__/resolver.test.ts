@@ -1,7 +1,7 @@
 import { Contract, ContractFactory } from '@ethersproject/contracts'
 import { Resolvable, Resolver } from 'did-resolver'
 import { getResolver } from '../resolver'
-import { EthrDidController } from '../controller'
+import { VdaDidController } from '../controller'
 import DidRegistryContract from 'ethr-did-registry'
 import { interpretIdentifier, stringToBytes32 } from '../helpers'
 import { createProvider, sleep, startMining, stopMining } from './testUtils'
@@ -109,7 +109,7 @@ describe('ethrResolver', () => {
     it('resolves document', async () => {
       expect.assertions(1)
       const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
-      await new EthrDidController(identity, registryContract).changeOwner(controller, { from: identity })
+      await new VdaDidController(identity, registryContract).changeOwner(controller, { from: identity })
       const result = await didResolver.resolve(did)
       expect(result).toEqual({
         didDocumentMetadata: { versionId: `${blockHeightBeforeChange + 1}`, updated: expect.anything() },
@@ -166,7 +166,7 @@ describe('ethrResolver', () => {
       it('resolves document', async () => {
         expect.assertions(1)
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
-        await new EthrDidController(identity, registryContract).addDelegate('veriKey', delegate1, 86401, {
+        await new VdaDidController(identity, registryContract).addDelegate('veriKey', delegate1, 86401, {
           from: controller,
         })
         const result = await didResolver.resolve(did)
@@ -204,7 +204,7 @@ describe('ethrResolver', () => {
       it('resolves document', async () => {
         expect.assertions(1)
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
-        await new EthrDidController(identity, registryContract).addDelegate('sigAuth', delegate2, 1, {
+        await new VdaDidController(identity, registryContract).addDelegate('sigAuth', delegate2, 1, {
           from: controller,
         })
         const result = await didResolver.resolve(did)
@@ -281,7 +281,7 @@ describe('ethrResolver', () => {
       it('resolves document', async () => {
         expect.assertions(1)
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
-        await new EthrDidController(identity, registryContract).revokeDelegate('veriKey', delegate1, {
+        await new VdaDidController(identity, registryContract).revokeDelegate('veriKey', delegate1, {
           from: controller,
         })
         await sleep(1000)
@@ -311,7 +311,7 @@ describe('ethrResolver', () => {
       it('resolves document', async () => {
         expect.assertions(1)
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
-        await new EthrDidController(identity, registryContract).addDelegate('sigAuth', delegate2, 86402, {
+        await new VdaDidController(identity, registryContract).addDelegate('sigAuth', delegate2, 86402, {
           from: controller,
         })
         const result = await didResolver.resolve(did)
@@ -347,7 +347,7 @@ describe('ethrResolver', () => {
     describe('add publicKey', () => {
       it('resolves with EcdsaSecp256k1VerificationKey2019', async () => {
         expect.assertions(1)
-        await new EthrDidController(identity, registryContract).setAttribute(
+        await new VdaDidController(identity, registryContract).setAttribute(
           'did/pub/Secp256k1/veriKey',
           '0x02b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71',
           86401,
@@ -384,7 +384,7 @@ describe('ethrResolver', () => {
 
       it('resolves with Ed25519VerificationKey2018', async () => {
         expect.assertions(1)
-        await new EthrDidController(identity, registryContract).setAttribute(
+        await new VdaDidController(identity, registryContract).setAttribute(
           'did/pub/Ed25519/veriKey/base64',
           '0x02b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71',
           86402,
@@ -430,7 +430,7 @@ describe('ethrResolver', () => {
 
       it('resolves with RSAVerificationKey2018', async () => {
         expect.assertions(1)
-        await new EthrDidController(identity, registryContract).setAttribute(
+        await new VdaDidController(identity, registryContract).setAttribute(
           'did/pub/RSA/veriKey/pem',
           '-----BEGIN PUBLIC KEY...END PUBLIC KEY-----\r\n',
           86403,
@@ -489,7 +489,7 @@ describe('ethrResolver', () => {
       it('resolves with X25519KeyAgreementKey2019', async () => {
         expect.assertions(1)
         const keyAgrDid = `did:ethr:dev:${keyAgreementController}`
-        await new EthrDidController(keyAgreementController, registryContract).setAttribute(
+        await new VdaDidController(keyAgreementController, registryContract).setAttribute(
           'did/pub/X25519/enc/base64',
           `0x${Buffer.from('MCowBQYDK2VuAyEAEYVXd3/7B4d0NxpSsA/tdVYdz5deYcR1U+ZkphdmEFI=', 'base64').toString('hex')}`,
           86404,
@@ -523,7 +523,7 @@ describe('ethrResolver', () => {
     describe('add service endpoints', () => {
       it('resolves document', async () => {
         expect.assertions(1)
-        await new EthrDidController(identity, registryContract).setAttribute(
+        await new VdaDidController(identity, registryContract).setAttribute(
           stringToBytes32('did/svc/HubService'),
           'https://hubs.uport.me',
           86405,
@@ -591,7 +591,7 @@ describe('ethrResolver', () => {
   describe('revoke publicKey', () => {
     it('resolves without EcdsaSecp256k1VerificationKey2019', async () => {
       expect.assertions(1)
-      await new EthrDidController(identity, registryContract).revokeAttribute(
+      await new VdaDidController(identity, registryContract).revokeAttribute(
         'did/pub/Secp256k1/veriKey',
         '0x02b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71',
         { from: controller }
@@ -643,7 +643,7 @@ describe('ethrResolver', () => {
 
     it('resolves without Ed25519VerificationKey2018', async () => {
       expect.assertions(1)
-      await new EthrDidController(identity, registryContract).revokeAttribute(
+      await new VdaDidController(identity, registryContract).revokeAttribute(
         'did/pub/Ed25519/veriKey/base64',
         '0x02b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71',
         { from: controller }
@@ -686,7 +686,7 @@ describe('ethrResolver', () => {
 
     it('resolves without RSAVerificationKey2018', async () => {
       expect.assertions(1)
-      await new EthrDidController(identity, registryContract).revokeAttribute(
+      await new VdaDidController(identity, registryContract).revokeAttribute(
         stringToBytes32('did/pub/RSA/veriKey/pem'),
         '-----BEGIN PUBLIC KEY...END PUBLIC KEY-----\r\n',
         { from: controller }
@@ -724,7 +724,7 @@ describe('ethrResolver', () => {
     describe('revoke service endpoints', () => {
       it('resolves without HubService', async () => {
         expect.assertions(1)
-        await new EthrDidController(identity, registryContract).revokeAttribute(
+        await new VdaDidController(identity, registryContract).revokeAttribute(
           stringToBytes32('did/svc/HubService'),
           'https://hubs.uport.me',
           { from: controller }
@@ -761,7 +761,7 @@ describe('ethrResolver', () => {
       const checksumAddress = interpretIdentifier(lowAddress).address
       const lowDid = `did:ethr:dev:${lowAddress}`
       const checksumDid = `did:ethr:dev:${checksumAddress}`
-      await new EthrDidController(lowAddress, registryContract).setAttribute(
+      await new VdaDidController(lowAddress, registryContract).setAttribute(
         'did/pub/Secp256k1/veriKey/hex',
         '0x02b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71',
         86409,
@@ -780,7 +780,7 @@ describe('ethrResolver', () => {
       const address = accounts[4]
       const identifier = `did:ethr:dev:${address}`
       const authPubKey = `31303866356238393330623164633235386162353765386630646362363932353963363162316166`
-      await new EthrDidController(identifier, registryContract).setAttribute(
+      await new VdaDidController(identifier, registryContract).setAttribute(
         'did/pub/Ed25519/sigAuth/hex',
         `0x${authPubKey}`,
         86410,
@@ -817,7 +817,7 @@ describe('ethrResolver', () => {
         const publicKeyHex = `b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71`
         const expectedPublicKeyBase58 = 'DV4G2kpBKjE6zxKor7Cj21iL9x9qyXb6emqjszBXcuhz'
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
-        await new EthrDidController(identifier, registryContract).setAttribute(
+        await new VdaDidController(identifier, registryContract).setAttribute(
           'did/pub/Ed25519/veriKey/base58',
           `0x${publicKeyHex}`,
           86411,
@@ -857,7 +857,7 @@ describe('ethrResolver', () => {
         const address = accounts[6]
         const identifier = `did:ethr:dev:${address}`
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
-        await new EthrDidController(identifier, registryContract).changeOwner(nullAddress, { from: address })
+        await new VdaDidController(identifier, registryContract).changeOwner(nullAddress, { from: address })
         const result = await didResolver.resolve(identifier)
         expect(result).toEqual({
           didDocumentMetadata: {
@@ -946,7 +946,7 @@ describe('ethrResolver', () => {
         const identifier = `did:ethr:dev:${address}`
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
         // change owner to self
-        await new EthrDidController(identifier, registryContract).changeOwner(address, { from: address })
+        await new VdaDidController(identifier, registryContract).changeOwner(address, { from: address })
         const result = await didResolver.resolve(`${identifier}?versionId=latest`)
         expect(result).toEqual({
           didDocumentMetadata: { versionId: `${blockHeightBeforeChange + 1}`, updated: expect.anything() },
@@ -975,7 +975,7 @@ describe('ethrResolver', () => {
         const identifier = `did:ethr:dev:${address}`
 
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
-        const ethrDid = new EthrDidController(identifier, registryContract)
+        const ethrDid = new VdaDidController(identifier, registryContract)
         await ethrDid.setAttribute(
           'did/pub/Ed25519/veriKey/hex',
           `0x11111111`,
@@ -1028,7 +1028,7 @@ describe('ethrResolver', () => {
         const address = accounts[9]
         const identifier = `did:ethr:dev:${address}`
 
-        const ethrDid = new EthrDidController(identifier, registryContract)
+        const ethrDid = new VdaDidController(identifier, registryContract)
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
         await ethrDid.addDelegate('veriKey', delegateAddress1, 86401, { from: address })
         await ethrDid.addDelegate('veriKey', delegateAddress2, 86402, { from: address })
@@ -1071,7 +1071,7 @@ describe('ethrResolver', () => {
         const address = accounts[10]
         const identifier = `did:ethr:dev:${address}`
 
-        const ethrDid = new EthrDidController(identifier, registryContract)
+        const ethrDid = new VdaDidController(identifier, registryContract)
         const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
         await ethrDid.changeOwner(address, { from: address })
         await ethrDid.changeOwner(newOwner, { from: address })
@@ -1107,7 +1107,7 @@ describe('ethrResolver', () => {
         const address = accounts[11]
         const identifier = `did:ethr:dev:${address}`
 
-        await new EthrDidController(identifier, registryContract).addDelegate('sigAuth', delegate, 1, {
+        await new VdaDidController(identifier, registryContract).addDelegate('sigAuth', delegate, 1, {
           from: address,
         })
         let result = await didResolver.resolve(identifier)
@@ -1162,7 +1162,7 @@ describe('ethrResolver', () => {
       const address = accounts[12]
       const identifier = `did:ethr:dev:${address}`
 
-      const ethrDid = new EthrDidController(identifier, registryContract)
+      const ethrDid = new VdaDidController(identifier, registryContract)
       const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
       await stopMining(web3Provider)
       const tx1 = ethrDid.setAttribute(stringToBytes32('did/svc/TestService'), 'https://test.uport.me', 86406, {
@@ -1202,7 +1202,7 @@ describe('ethrResolver', () => {
       const address = accounts[13]
       const identifier = `did:ethr:dev:${address}`
 
-      const ethrDid = new EthrDidController(identifier, registryContract)
+      const ethrDid = new VdaDidController(identifier, registryContract)
 
       const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
 
@@ -1250,7 +1250,7 @@ describe('ethrResolver', () => {
       const address = accounts[14]
       const identifier = `did:ethr:dev:${address}`
 
-      const ethrDid = new EthrDidController(identifier, registryContract)
+      const ethrDid = new VdaDidController(identifier, registryContract)
 
       const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
 
@@ -1287,7 +1287,7 @@ describe('ethrResolver', () => {
       const address = accounts[15]
       const identifier = `did:ethr:dev:${address}`
 
-      const ethrDid = new EthrDidController(identifier, registryContract)
+      const ethrDid = new VdaDidController(identifier, registryContract)
 
       const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
 
@@ -1320,7 +1320,7 @@ describe('ethrResolver', () => {
       const address = accounts[16]
       const identifier = `did:ethr:dev:${address}`
 
-      const ethrDid = new EthrDidController(identifier, registryContract)
+      const ethrDid = new VdaDidController(identifier, registryContract)
 
       const blockHeightBeforeChange = (await web3Provider.getBlock('latest')).number
 

@@ -4,6 +4,9 @@ import { InfuraProvider, JsonRpcProvider, Provider } from '@ethersproject/provid
 import DidRegistryContract from 'ethr-did-registry'
 import { DEFAULT_REGISTRY_ADDRESS, knownInfuraNetworks, knownNetworks } from './helpers'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('dotenv').config()
+
 /**
  * A configuration entry for an ethereum network
  * It should contain at least one of `name` or `chainId` AND one of `provider`, `web3`, or `rpcUrl`
@@ -120,4 +123,18 @@ export function configureResolverWithNetworks(conf: ConfigurationOptions = {}): 
     throw new Error('invalid_config: Please make sure to have at least one network')
   }
   return networks
+}
+
+export function getContractInfoForNetwork(chainNameOrId: any) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const abi = require('./contract/abi.json')
+  const currentNet = process.env.RPC_TARGET_NET != undefined ? process.env.RPC_TARGET_NET : 'RPC_URL_POLYGON_MAINNET'
+  const address = process.env[`CONTRACT_ADDRESS_${currentNet}_DidRegistry`]
+  if (!address) {
+    throw new Error('Contract address not defined in env')
+  }
+  return {
+    abi: abi,
+    address: address,
+  }
 }

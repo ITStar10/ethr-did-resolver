@@ -2,7 +2,7 @@ import { Base58 } from '@ethersproject/basex'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Block, BlockTag } from '@ethersproject/providers'
 import { ConfigurationOptions, ConfiguredNetworks, configureResolverWithNetworks } from './configuration'
-import { EthrDidController } from './controller'
+import { VdaDidController } from './controller'
 import {
   DIDDocument,
   DIDResolutionOptions,
@@ -50,7 +50,7 @@ export class EthrDidResolver {
    */
   async getOwner(address: string, networkId: string, blockTag?: BlockTag): Promise<string> {
     //TODO: check if address or public key
-    return new EthrDidController(address, this.contracts[networkId]).getOwner(address, blockTag)
+    return new VdaDidController(address, this.contracts[networkId]).getOwner(address, blockTag)
   }
 
   /**

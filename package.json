@@ -1,5 +1,5 @@
 {
-  "name": "ethr-did-resolver",
+  "name": "vda-did-resolver",
   "version": "5.0.4",
   "description": "Resolve DID documents for ethereum addresses and public keys",
   "source": "src/index.ts",
@@ -93,6 +93,7 @@
     "@ethersproject/contracts": "^5.5.0",
     "@ethersproject/providers": "^5.5.0",
     "@ethersproject/transactions": "^5.5.0",
-    "did-resolver": "^3.1.5"
+    "did-resolver": "^3.1.5",
+    "dotenv": "^16.0.1"
   }
 }
