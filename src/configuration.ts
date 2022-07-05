@@ -1,11 +1,12 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { Contract, ContractFactory } from '@ethersproject/contracts'
 import { InfuraProvider, JsonRpcProvider, Provider } from '@ethersproject/providers'
-import DidRegistryContract from 'ethr-did-registry'
 import { DEFAULT_REGISTRY_ADDRESS, knownInfuraNetworks, knownNetworks } from './helpers'
 
 import { VeridaSelfTransactionConfig, VeridaMetaTransactionConfig } from '@verida/web3'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const DIDRegistry = require('./contract/abi.json').abi
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config()
 
@@ -71,7 +72,7 @@ export function getContractForNetwork(conf: ProviderConfiguration): Contract {
     }
   }
   // console.log('resolver:getContractForNetwork(): ', conf.registry)
-  const contract: Contract = ContractFactory.fromSolidity(DidRegistryContract)
+  const contract: Contract = ContractFactory.fromSolidity(DIDRegistry)
     .attach(conf.registry || DEFAULT_REGISTRY_ADDRESS)
     .connect(provider)
   return contract
