@@ -9,8 +9,7 @@ import { address, DEFAULT_REGISTRY_ADDRESS, interpretIdentifier, stringToBytes32
 
 import { CallType, ContractInfo, VeridaSelfTransactionConfig, VeridaMetaTransactionConfig } from '@verida/web3'
 import { VeridaContractInstance, VeridaContract } from '@verida/web3'
-
-type Configuration = VeridaMetaTransactionConfig | VeridaSelfTransactionConfig
+import { VeridaWeb3ConfigurationOption } from './configuration'
 
 const testSignature =
   '0x67de2d20880a7d27b71cdcb38817ba95800ca82dff557cedd91b96aacb9062e80b9e0b8cb9614fd61ce364502349e9079c26abaa21890d7bc2f1f6c8ff77f6261c'
@@ -37,7 +36,7 @@ export class VdaDidController {
    */
   constructor(
     callType: CallType,
-    options: Configuration,
+    options: VeridaWeb3ConfigurationOption,
     identifier: string | address,
     // contract?: Contract,
     // signer?: Signer,
@@ -67,7 +66,7 @@ export class VdaDidController {
   }
 
   async getOwner(address: address, blockTag?: BlockTag): Promise<string> {
-    return this.didContract.identityOwner(address)
+    return (await this.didContract.identityOwner(address)).data
   }
 
   async changeOwner(newOwner: address, options: CallOverrides = {}): Promise<any> {
@@ -85,11 +84,7 @@ export class VdaDidController {
     return await this.didContract.addDelegate(this.address, delegateTypeBytes, delegateAddress, exp, testSignature)
   }
 
-  async revokeDelegate(
-    delegateType: string,
-    delegateAddress: address,
-    options: CallOverrides = {}
-  ): Promise<TransactionReceipt> {
+  async revokeDelegate(delegateType: string, delegateAddress: address, options: CallOverrides = {}): Promise<any> {
     delegateType = delegateType.startsWith('0x') ? delegateType : stringToBytes32(delegateType)
     return await this.didContract.revokeDelegate(this.address, delegateType, delegateAddress, testSignature)
   }
@@ -167,7 +162,7 @@ export class VdaDidController {
     return await this.didContract.setAttribute(this.address, attrName, attrValue, exp, testSignature)
   }
 
-  async revokeAttribute(attrName: string, attrValue: string, options: CallOverrides = {}): Promise<TransactionReceipt> {
+  async revokeAttribute(attrName: string, attrValue: string, options: CallOverrides = {}): Promise<any> {
     // console.log(`revoking attribute ${attrName}(${attrValue}) for ${identity}`)
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
     attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')

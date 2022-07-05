@@ -4,6 +4,8 @@ import { InfuraProvider, JsonRpcProvider, Provider } from '@ethersproject/provid
 import DidRegistryContract from 'ethr-did-registry'
 import { DEFAULT_REGISTRY_ADDRESS, knownInfuraNetworks, knownNetworks } from './helpers'
 
+import { VeridaSelfTransactionConfig, VeridaMetaTransactionConfig } from '@verida/web3'
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config()
 
@@ -138,3 +140,5 @@ export function getContractInfoForNetwork(chainNameOrId: any) {
     address: address,
   }
 }
+
+export type VeridaWeb3ConfigurationOption = VeridaMetaTransactionConfig | VeridaSelfTransactionConfig

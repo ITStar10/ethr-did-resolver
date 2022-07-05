@@ -33,10 +33,10 @@ import {
 import { logDecoder } from './logParser'
 
 export function getResolver(options: ConfigurationOptions): Record<string, DIDResolver> {
-  return new EthrDidResolver(options).build()
+  return new VdaDidResolver(options).build()
 }
 
-export class EthrDidResolver {
+export class VdaDidResolver {
   private contracts: ConfiguredNetworks
 
   constructor(options: ConfigurationOptions) {
@@ -50,7 +50,10 @@ export class EthrDidResolver {
    */
   async getOwner(address: string, networkId: string, blockTag?: BlockTag): Promise<string> {
     //TODO: check if address or public key
-    return new VdaDidController(address, this.contracts[networkId]).getOwner(address, blockTag)
+    // return new VdaDidController(address, this.contracts[networkId]).getOwner(address, blockTag)
+    // return await new VdaDidController('web3', {}, address).getOwner(address, blockTag)
+    const result = await this.contracts[networkId].functions.identityOwner(address, { blockTag })
+    return result['0']
   }
 
   /**

@@ -12,6 +12,9 @@ import {
   Errors,
 } from './helpers'
 
+import { CallType } from '@verida/web3'
+import { VeridaWeb3ConfigurationOption } from './configuration'
+
 export {
   DEFAULT_REGISTRY_ADDRESS as REGISTRY,
   getResolver,
@@ -26,4 +29,6 @@ export {
   identifierMatcher,
   interpretIdentifier,
   Errors,
+  CallType,
+  VeridaWeb3ConfigurationOption,
 }

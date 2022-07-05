@@ -19,7 +19,9 @@
     ],
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "importHelpers": true
   },
   "exclude": [
     "**/__tests__/*",
