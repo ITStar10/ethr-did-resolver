@@ -96,6 +96,7 @@
     "@ethersproject/providers": "^5.5.0",
     "@ethersproject/transactions": "^5.5.0",
     "did-resolver": "^3.1.5",
-    "dotenv": "^16.0.1"
+    "dotenv": "^16.0.1",
+    "@verida/web3": "../blockchain-vda-web3-client/build/src"
   }
 }

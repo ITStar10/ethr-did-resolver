@@ -40,7 +40,7 @@ export class VdaDidController {
     identifier: string | address,
     // contract?: Contract,
     // signer?: Signer,
-    chainNameOrId = 'mainnet'
+    chainNameOrId: string | number = 'mainnet'
     // provider?: Provider,
     // rpcUrl?: string,
     // registry: string = DEFAULT_REGISTRY_ADDRESS
