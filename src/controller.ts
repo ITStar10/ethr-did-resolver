@@ -18,12 +18,9 @@ const testSignature =
  * A class that can be used to interact with the ERC1056 contract on behalf of a local controller key-pair
  */
 export class VdaDidController {
-  // private signer?: Signer
   private address: string // public address of did - 0x324...2321
   public did: string // DID - did:ethr:kovan:0x324...2321
 
-  // private callType: CallType
-  // private options: Configuration
   private didContract: any
 
   /**
@@ -38,12 +35,7 @@ export class VdaDidController {
     callType: CallType,
     options: VeridaWeb3ConfigurationOption,
     identifier: string | address,
-    // contract?: Contract,
-    // signer?: Signer,
     chainNameOrId: string | number = 'mainnet'
-    // provider?: Provider,
-    // rpcUrl?: string,
-    // registry: string = DEFAULT_REGISTRY_ADDRESS
   ) {
     // initialize identifier
     const { address, publicKey, network } = interpretIdentifier(identifier)

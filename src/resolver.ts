@@ -2,7 +2,6 @@ import { Base58 } from '@ethersproject/basex'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Block, BlockTag } from '@ethersproject/providers'
 import { ConfigurationOptions, ConfiguredNetworks, configureResolverWithNetworks } from './configuration'
-import { VdaDidController } from './controller'
 import {
   DIDDocument,
   DIDResolutionOptions,
