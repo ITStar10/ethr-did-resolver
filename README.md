@@ -2,32 +2,16 @@
 [![npm](https://img.shields.io/npm/v/ethr-did-resolver.svg)](https://www.npmjs.com/package/ethr-did-resolver)
 [![codecov](https://codecov.io/gh/decentralized-identity/ethr-did-resolver/branch/develop/graph/badge.svg)](https://codecov.io/gh/decentralized-identity/ethr-did-resolver)
 
-# ethr DID Resolver
+# VDA DID Resolver
 
-This library is intended to use ethereum addresses or secp256k1 publicKeys as fully self-managed
-[Decentralized Identifiers](https://w3c.github.io/did-core/#identifier) and wrap them in a
-[DID Document](https://w3c.github.io/did-core/#did-document-properties)
+This library is forked [ethr-did-resolver](https://github.com/decentralized-identity/ethr-did-resolver) and updated for [vda-did-registry](https://github.com/verida/blockchain-contracts).
 
-It supports the proposed [Decentralized Identifiers](https://w3c.github.io/did-core/#identifier) spec from the
-[W3C Credentials Community Group](https://w3c-ccg.github.io).
-
-It requires the `did-resolver` library, which is the primary interface for resolving DIDs.
-
-This DID method relies on the [ethr-did-registry](https://github.com/uport-project/ethr-did-registry).
-
-## DID method
-
-To encode a DID for an Ethereum address on the ethereum mainnet, simply prepend `did:ethr:`
-
-eg:
-
-`did:ethr:0xf3beac30c498d9e26865f34fcaa57dbb935b0d74`
-
-Multi-network DIDs are also supported, if the proper configuration is provided during setup.
-
-For example:
-`did:ethr:0x4:0xf3beac30c498d9e26865f34fcaa57dbb935b0d74` gets resolved on the rinkeby testnet (chainID=0x4), and
-represents a distinct identifier than the generic one, with different DID documents and different key rotation history.
+## Updates on `ethr-did-resolver`
+- Update resolving logic :<br/>
+  Updated `reslove()` method to support custom fields of vda-did-document.
+- `VdaDidController` supports 2 modes for interacting with `vda-did-registry` contract: <br/>
+  `VdaDidController`(in controller.ts) now interacts with `vda-did-registry` contract in 2 modes of `web3` & `gasless`.
+Original `EthrDidController` interacts with `ethr-did-registry` contract directly.
 
 ## DID Document
 
@@ -71,7 +55,7 @@ type `EcdsaSecp256k1RecoveryMethod2020` and an `blockchainAccountId` attribute c
 ## Building a DID document
 
 The DID document is not stored as a file, but is built by using read only functions and contract events on
-the [ethr-did-registry](https://github.com/uport-project/ethr-did-registry) Ethereum smart contract.
+the [vda-did-registry](https://github.com/verida/blockchain-contracts/tree/develop/VDA-DID-Registry) smart contract.
 
 Please see the [spec](doc/did-method-spec.md) for details of how the DID document and corresponding metadata are
 computed.
@@ -95,8 +79,8 @@ const providerConfig = { rpcUrl: 'http://localhost:7545', registry: registry.add
 // since that allows you to resolve on multiple public and private networks at the same time.
 
 // getResolver will return an object with a key/value pair of { "ethr": resolver } where resolver is a function used by the generic did resolver.
-const ethrDidResolver = getResolver(providerConfig)
-const didResolver = new Resolver(ethrDidResolver)
+const vdaDidResolver = getResolver(providerConfig)
+const didResolver = new Resolver(vdaDidResolver)
 
 didResolver.resolve('did:ethr:0xf3beac30c498d9e26865f34fcaa57dbb935b0d74').then((doc) => console.log)
 
@@ -121,7 +105,7 @@ const providerConfig = {
   ]
 }
 
-const ethrDidResolver = getResolver(providerConfig)
+const vdaDidResolver = getResolver(providerConfig)
 ```
 
 The configuration from above allows you to resolve ethr-did's of the following formats:
