@@ -43,6 +43,7 @@ export class VdaDidController {
 
     // initialize contract connection
     const contractInfo = getContractInfoForNetwork(net)
+    // console.log('VdaDIDController ContractInfo : ', contractInfo)
 
     this.didContract = getVeridaContract(callType, {
       ...contractInfo,
