@@ -184,64 +184,92 @@ export class VdaDidResolver {
         } else if (event._eventName === eventNames.DIDAttributeChanged) {
           const currentEvent = <DIDAttributeChanged>event
           const name = currentEvent.name //conversion from bytes32 is done in logParser
+          // const value = currentEvent.value
           const match = name.match(/^did\/(pub|svc)\/(\w+)(\/(\w+))?(\/(\w+))?$/)
           if (match) {
             const section = match[1]
             const algorithm = match[2]
             const type = legacyAttrTypes[match[4]] || match[4]
             const encoding = match[6]
-            switch (section) {
-              case 'pub': {
-                delegateCount++
-                const pk: LegacyVerificationMethod = {
-                  id: `${did}#delegate-${delegateCount}`,
-                  type: `${algorithm}${type}`,
-                  controller: did,
-                }
-                pk.type = legacyAlgoMap[pk.type] || algorithm
-                switch (encoding) {
-                  case null:
-                  case undefined:
-                  case 'hex':
-                    pk.publicKeyHex = strip0x(currentEvent.value)
-                    break
-                  case 'base64':
-                    pk.publicKeyBase64 = Buffer.from(currentEvent.value.slice(2), 'hex').toString('base64')
-                    break
-                  case 'base58':
-                    pk.publicKeyBase58 = Base58.encode(Buffer.from(currentEvent.value.slice(2), 'hex'))
-                    break
-                  case 'pem':
-                    pk.publicKeyPem = Buffer.from(currentEvent.value.slice(2), 'hex').toString()
-                    break
-                  default:
-                    pk.value = strip0x(currentEvent.value)
-                }
-                pks[eventIndex] = pk
-                if (match[4] === 'sigAuth') {
-                  auth[eventIndex] = pk.id
-                } else if (match[4] === 'enc') {
-                  keyAgreementRefs[eventIndex] = pk.id
-                }
-                break
+
+            const contextTag = Buffer.from('?context=', 'utf-8').toString('hex')
+            const TypeTag = Buffer.from('&type=', 'utf-8').toString('hex')
+
+            // const valueMatch = currentEvent.value.match(/(\w+)(\?context=(\w+)(&type=(\w+))?)?/)
+
+            if (section === 'pub') {
+              const regExp = new RegExp(`(\\w+)${contextTag}(\\w+)`)
+              const valueMatch = currentEvent.value.match(regExp)
+              const value = valueMatch ? valueMatch[1] : currentEvent.value
+              const valueContext = valueMatch?.[2]
+
+              console.log('Resolver value = ', currentEvent.value)
+              console.log('Resolver valueMatch : ', valueMatch)
+              console.log('Resolver curVal = ', value)
+
+              delegateCount++
+              const pk: LegacyVerificationMethod = {
+                // id: `${did}#delegate-${delegateCount}`,
+                id: `${did}`,
+                type: `${algorithm}${type}`,
+                controller: did,
               }
-              case 'svc':
-                // eslint-disable-next-line no-case-declarations
-                const value = Buffer.from(currentEvent.value.slice(2), 'hex').toString()
-                // eslint-disable-next-line no-case-declarations
-                const valueMatch = value.match(/(.*)##(\w+)##(\w+)/)
+              let context = valueContext
+              pk.type = legacyAlgoMap[pk.type] || algorithm
+              switch (encoding) {
+                case null:
+                case undefined:
+                case 'hex':
+                  pk.publicKeyHex = strip0x(value)
+                  if (context) context = strip0x(context)
+                  break
+                case 'base64':
+                  pk.publicKeyBase64 = Buffer.from(value.slice(2), 'hex').toString('base64')
+                  if (context) context = Buffer.from(context, 'hex').toString('base64')
+                  break
+                case 'base58':
+                  pk.publicKeyBase58 = Base58.encode(Buffer.from(value.slice(2), 'hex'))
+                  if (context) context = Base58.encode(Buffer.from(context, 'hex'))
+                  break
+                case 'pem':
+                  pk.publicKeyPem = Buffer.from(value.slice(2), 'hex').toString()
+                  if (context) context = Buffer.from(context, 'hex').toString()
+                  break
+                default:
+                  pk.value = strip0x(value)
+                  if (context) context = strip0x(context)
+              }
+              if (context) pk.id = `${did}?context=${context}`
+              pks[eventIndex] = pk
+              if (match[4] === 'sigAuth') {
+                auth[eventIndex] = pk.id
+              } else if (match[4] === 'enc') {
+                keyAgreementRefs[eventIndex] = pk.id
+              }
+            } else if (section === 'svc') {
+              const regExp = new RegExp(`(\\w+)${contextTag}(\\w+)${TypeTag}(\\w+)`)
+              const valueMatch = currentEvent.value.match(regExp)
+              const value = valueMatch ? valueMatch[1] : currentEvent.value
+              const valueContext = valueMatch?.[2]
+              const valueType = valueMatch?.[3]
 
-                // console.log('Resolver : parsing svc', value)
+              serviceCount++
+              let id = `${did}`
+              if (valueContext) {
+                const context = Buffer.from(valueContext, 'hex').toString()
+                id = `${id}?context=${context}`
 
-                serviceCount++
-                services[eventIndex] = {
-                  // id: `${did}#service-${serviceCount}`,
-                  id: `${did}?context=${valueMatch?.[2]}#${valueMatch?.[3]}`,
-                  type: algorithm,
-                  // serviceEndpoint: Buffer.from(currentEvent.value.slice(2), 'hex').toString(),
-                  serviceEndpoint: valueMatch?.[1] ?? '',
+                if (valueType) {
+                  const decodedType = Buffer.from(valueType, 'hex').toString()
+                  id = `${id}&type=${decodedType}`
                 }
-                break
+              }
+              services[eventIndex] = {
+                // id: `${did}#service-${serviceCount}`,
+                id,
+                type: algorithm,
+                serviceEndpoint: Buffer.from(value.slice(2), 'hex').toString(),
+              }
             }
           }
         }
