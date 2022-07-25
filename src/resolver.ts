@@ -203,9 +203,9 @@ export class VdaDidResolver {
               const value = valueMatch ? valueMatch[1] : currentEvent.value
               const valueContext = valueMatch?.[2]
 
-              console.log('Resolver value = ', currentEvent.value)
-              console.log('Resolver valueMatch : ', valueMatch)
-              console.log('Resolver curVal = ', value)
+              // console.log('Resolver value = ', currentEvent.value)
+              // console.log('Resolver valueMatch : ', valueMatch)
+              // console.log('Resolver curVal = ', value)
 
               delegateCount++
               const pk: LegacyVerificationMethod = {
@@ -214,32 +214,30 @@ export class VdaDidResolver {
                 type: `${algorithm}${type}`,
                 controller: did,
               }
-              let context = valueContext
+              if (valueContext) {
+                const context = Buffer.from(valueContext, 'hex').toString()
+                pk.id = `${did}?context=${context}`
+              }
+
               pk.type = legacyAlgoMap[pk.type] || algorithm
               switch (encoding) {
                 case null:
                 case undefined:
                 case 'hex':
                   pk.publicKeyHex = strip0x(value)
-                  if (context) context = strip0x(context)
                   break
                 case 'base64':
                   pk.publicKeyBase64 = Buffer.from(value.slice(2), 'hex').toString('base64')
-                  if (context) context = Buffer.from(context, 'hex').toString('base64')
                   break
                 case 'base58':
                   pk.publicKeyBase58 = Base58.encode(Buffer.from(value.slice(2), 'hex'))
-                  if (context) context = Base58.encode(Buffer.from(context, 'hex'))
                   break
                 case 'pem':
                   pk.publicKeyPem = Buffer.from(value.slice(2), 'hex').toString()
-                  if (context) context = Buffer.from(context, 'hex').toString()
                   break
                 default:
                   pk.value = strip0x(value)
-                  if (context) context = strip0x(context)
               }
-              if (context) pk.id = `${did}?context=${context}`
               pks[eventIndex] = pk
               if (match[4] === 'sigAuth') {
                 auth[eventIndex] = pk.id
@@ -252,6 +250,10 @@ export class VdaDidResolver {
               const value = valueMatch ? valueMatch[1] : currentEvent.value
               const valueContext = valueMatch?.[2]
               const valueType = valueMatch?.[3]
+
+              // console.log('Service value : ', currentEvent.value)
+              // console.log('Service value match : ', valueMatch)
+              // console.log('Matched value : ', currentEvent.value)
 
               serviceCount++
               let id = `${did}`
