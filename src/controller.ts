@@ -21,11 +21,10 @@ export class VdaDidController {
   private address: string // public address of did - 0x324...2321
   public did: string // DID - did:ethr:kovan:0x324...2321
 
-  private didContract: any
+  private didContract: VeridaContract
 
   /**
    * Creates an VdaDidController instance.
-   *
    * @param callType : Verida Web3 interaction mode : direct/gasless
    * @param options : Verdia Web3 Configuration
    * @param identifier - required - a `did:ethr` string or a publicKeyHex or an ethereum address
@@ -58,28 +57,63 @@ export class VdaDidController {
     this.did = publicKey ? `did:ethr:${networkString}${publicKey}` : `did:ethr:${networkString}${address}`
   }
 
+  /**
+   * Get owner of a DID
+   * @param address DID
+   * @param blockTag Optional - Search point. Will be used in next update
+   * @returns Owner address of DID
+   */
   async getOwner(address: address, blockTag?: BlockTag): Promise<string> {
-    return (await this.didContract.identityOwner(address)).data
+    const owner = await this.didContract.identityOwner(address)
+    return new Promise((resolve, reject) => {
+      if (!owner.data) {
+        reject('Error in transaction')
+      }
+      resolve(owner.data)
+    })
   }
 
-  async changeOwner(newOwner: address, options: CallOverrides = {}): Promise<any> {
-    // console.log(`changing owner for ${oldOwner} on registry at ${registryContract.address}`)
-    return await this.didContract.changeOwner(this.address, newOwner, testSignature)
+  /**
+   * Change owner of a DID
+   *
+   * @param newOwner new owenr address
+   * @param options Transaction overrides - Not used now. Will be used from next update
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
+  async changeOwner(newOwner: address, options: CallOverrides = {}): Promise<object> {
+    return Promise.resolve(this.didContract.changeOwner(this.address, newOwner, testSignature))
   }
 
+  /**
+   * Add a delegate
+   * @param delegateType Type of delegate
+   * @param delegateAddress Delegate address
+   * @param exp Validity duration
+   * @param options Optional - Not used now. Transaction overrides
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
   async addDelegate(
     delegateType: string,
     delegateAddress: address,
     exp: number,
     options: CallOverrides = {}
-  ): Promise<any> {
+  ): Promise<object> {
     const delegateTypeBytes = stringToBytes32(delegateType)
-    return await this.didContract.addDelegate(this.address, delegateTypeBytes, delegateAddress, exp, testSignature)
+    return Promise.resolve(
+      this.didContract.addDelegate(this.address, delegateTypeBytes, delegateAddress, exp, testSignature)
+    )
   }
 
-  async revokeDelegate(delegateType: string, delegateAddress: address, options: CallOverrides = {}): Promise<any> {
+  /**
+   * Revoke a delegate
+   * @param delegateType Type of delegate
+   * @param delegateAddress Delegate address
+   * @param options Optional - Not used now. Transaction overrides
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
+  async revokeDelegate(delegateType: string, delegateAddress: address, options: CallOverrides = {}): Promise<object> {
     delegateType = delegateType.startsWith('0x') ? delegateType : stringToBytes32(delegateType)
-    return await this.didContract.revokeDelegate(this.address, delegateType, delegateAddress, testSignature)
+    return Promise.resolve(this.didContract.revokeDelegate(this.address, delegateType, delegateAddress, testSignature))
   }
 
   // async nonce(signer: address, options: CallOverrides = {}): Promise<BigNumber> {
@@ -95,11 +129,18 @@ export class VdaDidController {
   //   return nonceTx
   // }
 
+  /**
+   * Perform bulk transaction to add delegateList & attributeList
+   * @param delegateParams delegate list to be added
+   * @param attributeParams attribute list to be added
+   * @param options Optional - Not used now. Transaction overrides
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
   async bulkAdd(
     delegateParams: { delegateType: string; delegate: address; validity: number }[],
     attributeParams: { name: string; value: string; validity: number }[],
     options: CallOverrides = {}
-  ): Promise<any> {
+  ): Promise<object> {
     const dParams = delegateParams.map((item) => {
       return {
         ...item,
@@ -119,14 +160,21 @@ export class VdaDidController {
       }
     })
 
-    return await this.didContract.bulkAdd(this.address, dParams, aParams, testSignature)
+    return Promise.resolve(this.didContract.bulkAdd(this.address, dParams, aParams, testSignature))
   }
 
+  /**
+   * Perform bulk transaction to revoke delegateList & attributeList
+   * @param delegateParams delegate list to be added
+   * @param attributeParams attribute list to be added
+   * @param options Optional - Not used now. Transaction overrides
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
   async bulkRevoke(
     delegateParams: { delegateType: string; delegate: address }[],
     attributeParams: { name: string; value: string }[],
     options: CallOverrides = {}
-  ): Promise<any> {
+  ): Promise<object> {
     const dParams = delegateParams.map((item) => {
       return {
         ...item,
@@ -145,20 +193,35 @@ export class VdaDidController {
       }
     })
 
-    return await this.didContract.bulkRevoke(this.address, dParams, aParams, testSignature)
+    return Promise.resolve(this.didContract.bulkRevoke(this.address, dParams, aParams, testSignature))
   }
 
-  async setAttribute(attrName: string, attrValue: string, exp: number, options: CallOverrides = {}): Promise<any> {
+  /**
+   * Set an attribute
+   * @param attrName Attribute name
+   * @param attrValue Attribute value.
+   * @param exp Validity duration
+   * @param options Optional - Not used now. Transaction overrides
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
+  async setAttribute(attrName: string, attrValue: string, exp: number, options: CallOverrides = {}): Promise<object> {
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
     attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
 
-    return await this.didContract.setAttribute(this.address, attrName, attrValue, exp, testSignature)
+    return Promise.resolve(this.didContract.setAttribute(this.address, attrName, attrValue, exp, testSignature))
   }
 
-  async revokeAttribute(attrName: string, attrValue: string, options: CallOverrides = {}): Promise<any> {
+  /**
+   * Revoke an attribute
+   * @param attrName Attribute name
+   * @param attrValue Attribute value.
+   * @param options Optional - Not used now. Transaction overrides
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
+  async revokeAttribute(attrName: string, attrValue: string, options: CallOverrides = {}): Promise<object> {
     // console.log(`revoking attribute ${attrName}(${attrValue}) for ${identity}`)
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
     attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
-    return await this.didContract.revokeAttribute(this.address, attrName, attrValue, testSignature)
+    return Promise.resolve(this.didContract.revokeAttribute(this.address, attrName, attrValue, testSignature))
   }
 }

@@ -31,10 +31,16 @@ import {
 } from './helpers'
 import { logDecoder } from './logParser'
 
+/**
+ * Create a VdaDidResolver instance and return it
+ * @param options Configurations
+ * @returns VdaDidResolver instance
+ */
 export function getResolver(options: ConfigurationOptions): Record<string, DIDResolver> {
   return new VdaDidResolver(options).build()
 }
 
+/** A class that can be used to resolve a DIDDocument */
 export class VdaDidResolver {
   private contracts: ConfiguredNetworks
 
@@ -66,6 +72,9 @@ export class VdaDidResolver {
     return BigNumber.from(result['0'])
   }
 
+  /**
+   * returns the Metadata of a block
+   */
   async getBlockMetadata(blockHeight: number, networkId: string): Promise<{ height: string; isoDate: string }> {
     const block: Block = await this.contracts[networkId].provider.getBlock(blockHeight)
     return {
@@ -74,6 +83,7 @@ export class VdaDidResolver {
     }
   }
 
+  /** Find logs and summarize it by DID */
   async changeLog(
     identity: string,
     networkId: string,
@@ -114,6 +124,7 @@ export class VdaDidResolver {
     return { address, history, controllerKey, chainId }
   }
 
+  /** Create a DIDDocument from log list */
   wrapDidDocument(
     did: string,
     address: string,
@@ -343,6 +354,7 @@ export class VdaDidResolver {
       : { didDocument, deactivated, versionId, nextVersionId }
   }
 
+  /** Resolve a DIDDocument from a DID */
   async resolve(
     did: string,
     parsed: ParsedDID,
