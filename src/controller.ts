@@ -8,7 +8,7 @@ import { getContractInfoForNetwork } from './configuration'
 import { address, DEFAULT_REGISTRY_ADDRESS, interpretIdentifier, stringToBytes32 } from './helpers'
 
 import { CallType, ContractInfo, VeridaSelfTransactionConfig, VeridaMetaTransactionConfig } from '@verida/web3'
-import { getVeridaContract, VeridaContract } from '@verida/web3'
+import { getVeridaContract, VeridaContract, VdaTransactionResult } from '@verida/web3'
 import { VeridaWeb3ConfigurationOption } from './configuration'
 
 const testSignature =
@@ -80,7 +80,7 @@ export class VdaDidController {
    * @param options Transaction overrides - Not used now. Will be used from next update
    * @returns Object that shows the status & transactionRecipient or status & err message
    */
-  async changeOwner(newOwner: address, options: CallOverrides = {}): Promise<object> {
+  async changeOwner(newOwner: address, options: CallOverrides = {}): Promise<VdaTransactionResult> {
     return Promise.resolve(this.didContract.changeOwner(this.address, newOwner, testSignature))
   }
 
@@ -97,7 +97,7 @@ export class VdaDidController {
     delegateAddress: address,
     exp: number,
     options: CallOverrides = {}
-  ): Promise<object> {
+  ): Promise<VdaTransactionResult> {
     const delegateTypeBytes = stringToBytes32(delegateType)
     return Promise.resolve(
       this.didContract.addDelegate(this.address, delegateTypeBytes, delegateAddress, exp, testSignature)
@@ -111,7 +111,11 @@ export class VdaDidController {
    * @param options Optional - Not used now. Transaction overrides
    * @returns Object that shows the status & transactionRecipient or status & err message
    */
-  async revokeDelegate(delegateType: string, delegateAddress: address, options: CallOverrides = {}): Promise<object> {
+  async revokeDelegate(
+    delegateType: string,
+    delegateAddress: address,
+    options: CallOverrides = {}
+  ): Promise<VdaTransactionResult> {
     delegateType = delegateType.startsWith('0x') ? delegateType : stringToBytes32(delegateType)
     return Promise.resolve(this.didContract.revokeDelegate(this.address, delegateType, delegateAddress, testSignature))
   }
@@ -140,7 +144,7 @@ export class VdaDidController {
     delegateParams: { delegateType: string; delegate: address; validity: number }[],
     attributeParams: { name: string; value: string; validity: number }[],
     options: CallOverrides = {}
-  ): Promise<object> {
+  ): Promise<VdaTransactionResult> {
     const dParams = delegateParams.map((item) => {
       return {
         ...item,
@@ -174,7 +178,7 @@ export class VdaDidController {
     delegateParams: { delegateType: string; delegate: address }[],
     attributeParams: { name: string; value: string }[],
     options: CallOverrides = {}
-  ): Promise<object> {
+  ): Promise<VdaTransactionResult> {
     const dParams = delegateParams.map((item) => {
       return {
         ...item,
@@ -204,7 +208,12 @@ export class VdaDidController {
    * @param options Optional - Not used now. Transaction overrides
    * @returns Object that shows the status & transactionRecipient or status & err message
    */
-  async setAttribute(attrName: string, attrValue: string, exp: number, options: CallOverrides = {}): Promise<object> {
+  async setAttribute(
+    attrName: string,
+    attrValue: string,
+    exp: number,
+    options: CallOverrides = {}
+  ): Promise<VdaTransactionResult> {
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
     attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
 
@@ -218,7 +227,11 @@ export class VdaDidController {
    * @param options Optional - Not used now. Transaction overrides
    * @returns Object that shows the status & transactionRecipient or status & err message
    */
-  async revokeAttribute(attrName: string, attrValue: string, options: CallOverrides = {}): Promise<object> {
+  async revokeAttribute(
+    attrName: string,
+    attrValue: string,
+    options: CallOverrides = {}
+  ): Promise<VdaTransactionResult> {
     // console.log(`revoking attribute ${attrName}(${attrValue}) for ${identity}`)
     attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
     attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
