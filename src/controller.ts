@@ -10,9 +10,9 @@ import { address, DEFAULT_REGISTRY_ADDRESS, interpretIdentifier, stringToBytes32
 import { CallType, ContractInfo, VeridaSelfTransactionConfig, VeridaMetaTransactionConfig } from '@verida/web3'
 import { getVeridaContract, VeridaContract, VdaTransactionResult } from '@verida/web3'
 import { VeridaWeb3ConfigurationOption } from './configuration'
+import { ethers } from 'ethers'
 
-const testSignature =
-  '0x67de2d20880a7d27b71cdcb38817ba95800ca82dff557cedd91b96aacb9062e80b9e0b8cb9614fd61ce364502349e9079c26abaa21890d7bc2f1f6c8ff77f6261c'
+import EncryptionUtils from '@verida/encryption-utils'
 
 /**
  * A class that can be used to interact with the ERC1056 contract on behalf of a local controller key-pair
@@ -57,6 +57,16 @@ export class VdaDidController {
     this.did = publicKey ? `did:ethr:${networkString}${publicKey}` : `did:ethr:${networkString}${address}`
   }
 
+  private getVeridaSignature = async (rawMsg: string, privateKey: string) => {
+    const nonce = (await this.didContract.getNonce(this.address)).data.toNumber()
+    // console.log('Resolver - Nonce = ', nonce)
+    rawMsg = ethers.utils.solidityPack(['bytes', 'uint256'], [rawMsg, nonce])
+
+    const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), 'hex'))
+
+    return EncryptionUtils.signData(rawMsg, privateKeyArray)
+  }
+
   /**
    * Get owner of a DID
    * @param address DID
@@ -77,11 +87,14 @@ export class VdaDidController {
    * Change owner of a DID
    *
    * @param newOwner new owenr address
+   * @param signKey Verida account private key starting with 0x.
    * @param options Transaction overrides - Not used now. Will be used from next update
    * @returns Object that shows the status & transactionRecipient or status & err message
    */
-  async changeOwner(newOwner: address, options: CallOverrides = {}): Promise<VdaTransactionResult> {
-    return Promise.resolve(this.didContract.changeOwner(this.address, newOwner, testSignature))
+  async changeOwner(newOwner: address, signKey: string, options: CallOverrides = {}): Promise<VdaTransactionResult> {
+    const rawMsg = ethers.utils.solidityPack(['address', 'address'], [this.address, newOwner])
+    const signature = await this.getVeridaSignature(rawMsg, signKey)
+    return Promise.resolve(this.didContract.changeOwner(this.address, newOwner, signature))
   }
 
   /**
@@ -96,11 +109,19 @@ export class VdaDidController {
     delegateType: string,
     delegateAddress: address,
     exp: number,
+    signKey: string,
     options: CallOverrides = {}
   ): Promise<VdaTransactionResult> {
     const delegateTypeBytes = stringToBytes32(delegateType)
+
+    const rawMsg = ethers.utils.solidityPack(
+      ['address', 'bytes32', 'address', 'uint'],
+      [this.address, delegateTypeBytes, delegateAddress, exp]
+    )
+    const signature = await this.getVeridaSignature(rawMsg, signKey)
+
     return Promise.resolve(
-      this.didContract.addDelegate(this.address, delegateTypeBytes, delegateAddress, exp, testSignature)
+      this.didContract.addDelegate(this.address, delegateTypeBytes, delegateAddress, exp, signature)
     )
   }
 
@@ -114,10 +135,74 @@ export class VdaDidController {
   async revokeDelegate(
     delegateType: string,
     delegateAddress: address,
+    signKey: string,
     options: CallOverrides = {}
   ): Promise<VdaTransactionResult> {
     delegateType = delegateType.startsWith('0x') ? delegateType : stringToBytes32(delegateType)
-    return Promise.resolve(this.didContract.revokeDelegate(this.address, delegateType, delegateAddress, testSignature))
+    const rawMsg = ethers.utils.solidityPack(
+      ['address', 'bytes32', 'address'],
+      [this.address, delegateType, delegateAddress]
+    )
+    const signature = await this.getVeridaSignature(rawMsg, signKey)
+
+    return Promise.resolve(this.didContract.revokeDelegate(this.address, delegateType, delegateAddress, signature))
+  }
+
+  /**
+   * Set an attribute
+   * @param attrName Attribute name
+   * @param attrValue Attribute value.
+   * @param exp Validity duration
+   * @param proofId ethereum address of proof provider
+   * @param proof Signaure signed by private key of proof provider
+   * @param options Optional - Not used now. Transaction overrides
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
+  async setAttribute(
+    attrName: string,
+    attrValue: string,
+    exp: number,
+    proofId: string,
+    proof: string,
+    signKey: string,
+    options: CallOverrides = {}
+  ): Promise<VdaTransactionResult> {
+    attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
+    attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
+
+    const attrProof = proof.length !== 0 ? proof : []
+    const rawMsg = ethers.utils.solidityPack(
+      ['address', 'bytes32', 'bytes', 'uint', 'address', 'bytes'],
+      [this.address, attrName, attrValue, exp, proofId, attrProof]
+    )
+    const signature = await this.getVeridaSignature(rawMsg, signKey)
+
+    return Promise.resolve(
+      this.didContract.setAttribute(this.address, attrName, attrValue, exp, proofId, attrProof, signature)
+    )
+  }
+
+  /**
+   * Revoke an attribute
+   * @param attrName Attribute name
+   * @param attrValue Attribute value.
+   * @param options Optional - Not used now. Transaction overrides
+   * @returns Object that shows the status & transactionRecipient or status & err message
+   */
+  async revokeAttribute(
+    attrName: string,
+    attrValue: string,
+    signKey: string,
+    options: CallOverrides = {}
+  ): Promise<VdaTransactionResult> {
+    // console.log(`revoking attribute ${attrName}(${attrValue}) for ${identity}`)
+    attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
+    attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
+
+    const rawMsg = ethers.utils.solidityPack(['address', 'bytes32', 'bytes'], [this.address, attrName, attrValue])
+    const signature = await this.getVeridaSignature(rawMsg, signKey)
+
+    return Promise.resolve(this.didContract.revokeAttribute(this.address, attrName, attrValue, signature))
   }
 
   // async nonce(signer: address, options: CallOverrides = {}): Promise<BigNumber> {
@@ -142,10 +227,16 @@ export class VdaDidController {
    */
   async bulkAdd(
     delegateParams: { delegateType: string; delegate: address; validity: number }[],
-    attributeParams: { name: string; value: string; validity: number }[],
+    attributeParams: { name: string; value: string; validity: number; proofId: string; proof: string }[],
+    signKey: string,
     options: CallOverrides = {}
   ): Promise<VdaTransactionResult> {
+    let rawMsg = ethers.utils.solidityPack(['address'], [this.address])
     const dParams = delegateParams.map((item) => {
+      rawMsg = ethers.utils.solidityPack(
+        ['bytes', 'bytes32', 'address', 'uint'],
+        [rawMsg, stringToBytes32(item.delegateType), item.delegate, item.validity]
+      )
       return {
         ...item,
         delegateType: stringToBytes32(item.delegateType),
@@ -157,14 +248,23 @@ export class VdaDidController {
       const attrValue = item.value.startsWith('0x')
         ? item.value
         : '0x' + Buffer.from(item.value, 'utf-8').toString('hex')
+
+      rawMsg = ethers.utils.solidityPack(
+        ['bytes', 'bytes32', 'bytes', 'uint', 'address', 'bytes'],
+        [rawMsg, attrName, attrValue, item.validity, item.proofId, item.proof]
+      )
       return {
         name: attrName,
         value: attrValue,
         validity: item.validity,
+        proofId: item.proofId,
+        proof: item.proof,
       }
     })
 
-    return Promise.resolve(this.didContract.bulkAdd(this.address, dParams, aParams, testSignature))
+    const signature = await this.getVeridaSignature(rawMsg, signKey)
+
+    return Promise.resolve(this.didContract.bulkAdd(this.address, dParams, aParams, signature))
   }
 
   /**
@@ -177,12 +277,16 @@ export class VdaDidController {
   async bulkRevoke(
     delegateParams: { delegateType: string; delegate: address }[],
     attributeParams: { name: string; value: string }[],
+    signKey: string,
     options: CallOverrides = {}
   ): Promise<VdaTransactionResult> {
+    let rawMsg = ethers.utils.solidityPack(['address'], [this.address])
     const dParams = delegateParams.map((item) => {
+      const delegateType = item.delegateType.startsWith('0x') ? item.delegateType : stringToBytes32(item.delegateType)
+      rawMsg = ethers.utils.solidityPack(['bytes', 'bytes32', 'address'], [rawMsg, delegateType, item.delegate])
       return {
         ...item,
-        delegateType: item.delegateType.startsWith('0x') ? item.delegateType : stringToBytes32(item.delegateType),
+        delegateType,
       }
     })
 
@@ -191,50 +295,15 @@ export class VdaDidController {
       const attrValue = item.value.startsWith('0x')
         ? item.value
         : '0x' + Buffer.from(item.value, 'utf-8').toString('hex')
+      rawMsg = ethers.utils.solidityPack(['bytes', 'bytes32', 'bytes'], [rawMsg, attrName, attrValue])
       return {
         name: attrName,
         value: attrValue,
       }
     })
 
-    return Promise.resolve(this.didContract.bulkRevoke(this.address, dParams, aParams, testSignature))
-  }
+    const signature = await this.getVeridaSignature(rawMsg, signKey)
 
-  /**
-   * Set an attribute
-   * @param attrName Attribute name
-   * @param attrValue Attribute value.
-   * @param exp Validity duration
-   * @param options Optional - Not used now. Transaction overrides
-   * @returns Object that shows the status & transactionRecipient or status & err message
-   */
-  async setAttribute(
-    attrName: string,
-    attrValue: string,
-    exp: number,
-    options: CallOverrides = {}
-  ): Promise<VdaTransactionResult> {
-    attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
-    attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
-
-    return Promise.resolve(this.didContract.setAttribute(this.address, attrName, attrValue, exp, testSignature))
-  }
-
-  /**
-   * Revoke an attribute
-   * @param attrName Attribute name
-   * @param attrValue Attribute value.
-   * @param options Optional - Not used now. Transaction overrides
-   * @returns Object that shows the status & transactionRecipient or status & err message
-   */
-  async revokeAttribute(
-    attrName: string,
-    attrValue: string,
-    options: CallOverrides = {}
-  ): Promise<VdaTransactionResult> {
-    // console.log(`revoking attribute ${attrName}(${attrValue}) for ${identity}`)
-    attrName = attrName.startsWith('0x') ? attrName : stringToBytes32(attrName)
-    attrValue = attrValue.startsWith('0x') ? attrValue : '0x' + Buffer.from(attrValue, 'utf-8').toString('hex')
-    return Promise.resolve(this.didContract.revokeAttribute(this.address, attrName, attrValue, testSignature))
+    return Promise.resolve(this.didContract.bulkRevoke(this.address, dParams, aParams, signature))
   }
 }
