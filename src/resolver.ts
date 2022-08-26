@@ -30,6 +30,7 @@ import {
   strip0x,
 } from './helpers'
 import { logDecoder } from './logParser'
+import { utils } from 'ethers'
 
 /**
  * Create a VdaDidResolver instance and return it
@@ -124,6 +125,11 @@ export class VdaDidResolver {
     return { address, history, controllerKey, chainId }
   }
 
+  // To-do : Alex check for proof
+  // getVerificationExtra(did: string, pubKey: string) {
+  //   const pubKeyAddress = utils.computeAddress(pubKey)
+  // }
+
   /** Create a DIDDocument from log list */
   wrapDidDocument(
     did: string,
@@ -188,7 +194,7 @@ export class VdaDidResolver {
                 id: `${did}#delegate-${delegateCount}`,
                 type: verificationMethodTypes.EcdsaSecp256k1RecoveryMethod2020,
                 controller: did,
-                blockchainAccountId: `${currentEvent.delegate}@eip155:${chainId}`,
+                blockchainAccountId: `@eip155:${chainId}:${currentEvent.delegate}`,
               }
               break
           }
@@ -249,6 +255,15 @@ export class VdaDidResolver {
                 default:
                   pk.value = strip0x(value)
               }
+
+              // To-do : Alex add proofId & proof
+              const proofId = currentEvent.proofId
+              const proof = currentEvent.proof
+              if (proofId !== '0x0000000000000000000000000000000000000000') {
+                // pk.blockchainAccountId = proofId
+                pk.proof = proof
+              }
+
               pks[eventIndex] = pk
               if (match[4] === 'sigAuth') {
                 auth[eventIndex] = pk.id
@@ -317,7 +332,7 @@ export class VdaDidResolver {
         id: `${did}#controller`,
         type: verificationMethodTypes.EcdsaSecp256k1RecoveryMethod2020,
         controller: did,
-        blockchainAccountId: `${controller}@eip155:${chainId}`,
+        blockchainAccountId: `@eip155:${chainId}:${controller}`,
       },
     ]
 
