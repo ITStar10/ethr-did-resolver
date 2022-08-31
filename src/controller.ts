@@ -58,7 +58,7 @@ export class VdaDidController {
   }
 
   private getVeridaSignature = async (rawMsg: string, privateKey: string) => {
-    const nonce = (await this.didContract.getNonce(this.address)).data.toNumber()
+    const nonce = (await this.didContract.getNonce(this.address)).data //.toNumber()
     // console.log('Resolver - Nonce = ', nonce)
     rawMsg = ethers.utils.solidityPack(['bytes', 'uint256'], [rawMsg, nonce])
 
