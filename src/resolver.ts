@@ -256,10 +256,9 @@ export class VdaDidResolver {
               }
 
               // To-do : Alex add proofId & proof
-              const proofId = currentEvent.proofId
               const proof = currentEvent.proof
-              if (proofId !== '0x0000000000000000000000000000000000000000') {
-                // pk.blockchainAccountId = proofId
+              console.log('Resolver Proof = ', proof)
+              if (proof !== undefined && proof.length > 2 && proof.startsWith('0x')) {
                 pk.proof = proof
               }
 

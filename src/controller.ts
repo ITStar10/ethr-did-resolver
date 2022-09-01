@@ -59,7 +59,6 @@ export class VdaDidController {
 
   private getVeridaSignature = async (rawMsg: string, privateKey: string) => {
     const nonce = (await this.didContract.getNonce(this.address)).data //.toNumber()
-    // console.log('Resolver - Nonce = ', nonce)
     rawMsg = ethers.utils.solidityPack(['bytes', 'uint256'], [rawMsg, nonce])
 
     const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), 'hex'))
@@ -153,7 +152,6 @@ export class VdaDidController {
    * @param attrName Attribute name
    * @param attrValue Attribute value.
    * @param exp Validity duration
-   * @param proofId ethereum address of proof provider
    * @param proof Signaure signed by private key of proof provider
    * @param options Optional - Not used now. Transaction overrides
    * @returns Object that shows the status & transactionRecipient or status & err message
@@ -162,7 +160,6 @@ export class VdaDidController {
     attrName: string,
     attrValue: string,
     exp: number,
-    proofId: string,
     proof: string,
     signKey: string,
     options: CallOverrides = {}
@@ -172,14 +169,12 @@ export class VdaDidController {
 
     const attrProof = proof.length !== 0 ? proof : []
     const rawMsg = ethers.utils.solidityPack(
-      ['address', 'bytes32', 'bytes', 'uint', 'address', 'bytes'],
-      [this.address, attrName, attrValue, exp, proofId, attrProof]
+      ['address', 'bytes32', 'bytes', 'uint', 'bytes'],
+      [this.address, attrName, attrValue, exp, attrProof]
     )
     const signature = await this.getVeridaSignature(rawMsg, signKey)
 
-    return Promise.resolve(
-      this.didContract.setAttribute(this.address, attrName, attrValue, exp, proofId, attrProof, signature)
-    )
+    return Promise.resolve(this.didContract.setAttribute(this.address, attrName, attrValue, exp, attrProof, signature))
   }
 
   /**
@@ -227,7 +222,7 @@ export class VdaDidController {
    */
   async bulkAdd(
     delegateParams: { delegateType: string; delegate: address; validity: number }[],
-    attributeParams: { name: string; value: string; validity: number; proofId: string; proof: string }[],
+    attributeParams: { name: string; value: string; validity: number; proof: string }[],
     signKey: string,
     options: CallOverrides = {}
   ): Promise<VdaTransactionResult> {
@@ -250,14 +245,13 @@ export class VdaDidController {
         : '0x' + Buffer.from(item.value, 'utf-8').toString('hex')
 
       rawMsg = ethers.utils.solidityPack(
-        ['bytes', 'bytes32', 'bytes', 'uint', 'address', 'bytes'],
-        [rawMsg, attrName, attrValue, item.validity, item.proofId, item.proof]
+        ['bytes', 'bytes32', 'bytes', 'uint', 'bytes'],
+        [rawMsg, attrName, attrValue, item.validity, item.proof]
       )
       return {
         name: attrName,
         value: attrValue,
         validity: item.validity,
-        proofId: item.proofId,
         proof: item.proof,
       }
     })
