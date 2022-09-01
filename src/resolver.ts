@@ -255,9 +255,7 @@ export class VdaDidResolver {
                   pk.value = strip0x(value)
               }
 
-              // To-do : Alex add proofId & proof
               const proof = currentEvent.proof
-              console.log('Resolver Proof = ', proof)
               if (proof !== undefined && proof.length > 2 && proof.startsWith('0x')) {
                 pk.proof = proof
               }
