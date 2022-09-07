@@ -25,16 +25,25 @@ yarn install && yarn compile
 ```
 yarn link
 ```
-**2. Download library by following command or any other git tools:**
+**2. Link verida-js/packages/encryption-utils:**
+- Download [verida-js](https://github.com/verida/verida-js).
+- Compile `encryption-utils` package by running `yarn build` command inside `verida-js/packages/encryption-utils` directory.
+- run following command in `encryption-utils` directory
+```
+yarn link
+```
+
+**3. Download library by following command or any other git tools:**
 ```
 > git clone https://github.com/verida/blockchain-vda-did-resolver
 ```
-**3. Install dependencies**
+**4. Install dependencies**
 - First comment out line#84 in package.json file:
 >     "vda-did-resolver": "../vda-did-resolver/lib/"
 - Install dependencies by `yarn install` in the project folder.
 - Link `vda-web3-client` by `yarn link @verida/web3`.
-- Uncomment line#84 in package.json file
+- Link `encryption-utils` by `yarn link @verida/encryption-utils`.
+- Uncomment line#102 & line#103 in package.json file
 ##4. Build library**
 Build library by following command:
 ```
