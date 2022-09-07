@@ -10,7 +10,7 @@
   "umd:main": "lib/index.umd.js",
   "repository": {
     "type": "git",
-    "url": "git@https://github.com/verida/verida-js/tree/main/packages/vda-did-resolver"
+    "url": "https://github.com/verida/verida-js/tree/main/packages/vda-did-resolver"
   },
   "files": [
     "lib",
@@ -24,7 +24,6 @@
   "license": "Apache-2.0",
   "keywords": [
     "did:vda",
-    "did:ethr",
     "DID",
     "DID document",
     "PKI",
