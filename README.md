@@ -44,8 +44,9 @@ yarn link
 - Link `vda-web3-client` by `yarn link @verida/web3`.
 - Link `encryption-utils` by `yarn link @verida/encryption-utils`.
 - Uncomment line#102 & line#103 in package.json file
-##4. Build library**
-Build library by following command:
+
+**5. Build library**
+- Build library by following command:
 ```
 yarn build
 ```
