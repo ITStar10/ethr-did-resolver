@@ -38,7 +38,7 @@ yarn link
 > git clone https://github.com/verida/blockchain-vda-did-resolver
 ```
 **4. Install dependencies**
-- First comment out line#84 in package.json file:
+- First comment out line#102 & line#103 in package.json file:
 >     "vda-did-resolver": "../vda-did-resolver/lib/"
 - Install dependencies by `yarn install` in the project folder.
 - Link `vda-web3-client` by `yarn link @verida/web3`.
